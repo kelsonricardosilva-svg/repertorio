@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>CONFIG - Criador de Blocos</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; margin-top: 0; }
+        
+        .novo-bloco-area { background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #d1e9f9; }
+        .input-group { display: flex; gap: 10px; }
+        
+        input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; }
+        button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; padding: 8px 15px; }
+        
+        .btn-main { background: #27ae60; color: white; }
+        .btn-edit { background: #f39c12; color: white; font-size: 12px; }
+        .btn-del { background: #e74c3c; color: white; font-size: 12px; }
+        .btn-small-edit { background: #3498db; color: white; font-size: 11px; padding: 4px 8px; }
+
+        .card-bloco { background: #fff; border: 2px solid #eee; padding: 15px; border-radius: 10px; margin-bottom: 25px; }
+        .header-bloco { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f4f4f4; padding-bottom: 10px; margin-bottom: 15px; }
+        
+        .musica-linha-edit { display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f9f9f9; background: #fff; margin-bottom: 4px; border-radius: 4px; }
+        .musica-linha-edit:hover { background: #fcfcfc; }
+        .musica-info { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .num-p { color: #999; font-weight: bold; font-size: 12px; width: 20px; }
+        
+        .controles-musica { display: flex; gap: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⚙️ Painel do Criador</h1>
+    
+    <div class="novo-bloco-area">
+        <label><strong>1. Criar Novo Bloco</strong></label>
+        <div class="input-group" style="margin-top:8px;">
+            <input type="text" id="nomeNovoBloco" placeholder="Ex: Bloco Samba 01">
+            <button class="btn-main" onclick="criarBloco()">+ Criar Bloco</button>
+        </div>
+    </div>
+
+    <div id="listaDeBlocos"></div>
+</div>
+
+<script>
+    let bancoDados = JSON.parse(localStorage.getItem('musica_app_db')) || {};
+
+    function salvar() {
+        localStorage.setItem('musica_app_db', JSON.stringify(bancoDados));
+        render();
+    }
+
+    function criarBloco() {
+        const input = document.getElementById('nomeNovoBloco');
+        const nome = input.value.trim();
+        if(!nome) return;
+        if(!bancoDados[nome]) {
+            bancoDados[nome] = [];
+            input.value = "";
+            salvar();
+        }
+    }
+
+    function alterarNomeBloco(velhoNome) {
+        const novoNome = prompt("Alterar nome do bloco para:", velhoNome);
+        if(novoNome && novoNome !== velhoNome) {
+            bancoDados[novoNome] = bancoDados[velhoNome];
+            delete bancoDados[velhoNome];
+            salvar();
+        }
+    }
+
+    function excluirBloco(nome) {
+        if(confirm(`ATENÇÃO: Excluir o bloco "${nome}" e todas as músicas?`)) {
+            delete bancoDados[nome];
+            salvar();
+        }
+    }
+
+    function addMusica(bloco) {
+        const input = document.getElementById(`in-${bloco}`);
+        if(!input.value.trim()) return;
+        bancoDados[bloco].push(input.value.trim());
+        input.value = "";
+        salvar();
+    }
+
+    function editarMusica(bloco, index) {
+        const musicaAtual = bancoDados[bloco][index];
+        const novaMusica = prompt("Alterar música:", musicaAtual);
+        if (novaMusica !== null && novaMusica.trim() !== "") {
+            bancoDados[bloco][index] = novaMusica.trim();
+            salvar();
+        }
+    }
+
+    function excluirMusica(bloco, index) {
+        if(confirm("Remover esta música da lista?")) {
+            bancoDados[bloco].splice(index, 1);
+            salvar();
+        }
+    }
+
+    function render() {
+        const lista = document.getElementById('listaDeBlocos');
+        lista.innerHTML = "";
+        
+        for (let bloco in bancoDados) {
+            const div = document.createElement('div');
+            div.className = "card-bloco";
+            
+            // Gerar HTML das músicas cadastradas
+            let musicasHtml = "";
+            bancoDados[bloco].forEach((m, i) => {
+                musicasHtml += `
+                    <div class="musica-linha-edit">
+                        <div class="musica-info">
+                            <span class="num-p">${String(i+1).padStart(2, '0')}</span>
+                            <span>${m}</span>
+                        </div>
+                        <div class="controles-musica">
+                            <button class="btn-small-edit" onclick="editarMusica('${bloco}', ${i})">Editar</button>
+                            <button class="btn-del" style="padding: 4px 8px;" onclick="excluirMusica('${bloco}', ${i})">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            div.innerHTML = `
+                <div class="header-bloco">
+                    <strong style="font-size: 18px; color: #2c3e50;">📁 ${bloco}</strong>
+                    <div>
+                        <button class="btn-edit" onclick="alterarNomeBloco('${bloco}')">Alterar Nome</button>
+                        <button class="btn-del" onclick="excluirBloco('${bloco}')">Excluir Bloco</button>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    ${musicasHtml || '<p style="color:#999; font-size:12px;">Nenhuma música cadastrada.</p>'}
+                </div>
+
+                <div class="input-group" style="border-top: 1px dashed #ddd; padding-top: 15px;">
+                    <input type="text" id="in-${bloco}" placeholder="Nova música - Tom">
+                    <button class="btn-main" onclick="addMusica('${bloco}')">Adicionar</button>
+                </div>
+            `;
+            lista.appendChild(div);
+        }
+    }
+
+    render();
+</script>
+</body>
+</html>

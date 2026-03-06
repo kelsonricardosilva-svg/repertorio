@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PALCO - Setlist</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; padding: 15px; }
+        .grid-botoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .btn-palco { height: 100px; background: #3498db; color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 6px #2980b9; }
+        .btn-palco:active { transform: translateY(4px); box-shadow: 0 2px #2980b9; }
+        
+        #viewSetlist { margin-top: 30px; display: none; background: #222; border-radius: 15px; padding: 20px; border: 1px solid #444; }
+        .musica-linha { display: flex; padding: 15px; border-bottom: 1px solid #333; font-size: 1.3em; }
+        .numero { color: #e67e22; font-weight: bold; margin-right: 20px; }
+        .titulo-bloco { color: #e67e22; text-align: center; text-transform: uppercase; }
+        .btn-voltar { background: #555; color: white; padding: 10px; margin-bottom: 20px; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2 id="instrucao">Selecione o Bloco:</h2>
+    <div id="gradeBotoes" class="grid-botoes"></div>
+
+    <div id="viewSetlist">
+        <button class="btn-voltar" onclick="fecharLista()">← Voltar aos Blocos</button>
+        <h2 id="nomeDoBlocoAtivo" class="titulo-bloco"></h2>
+        <div id="corpoLista"></div>
+    </div>
+
+<script>
+    function carregarDados() {
+        return JSON.parse(localStorage.getItem('musica_app_db')) || {};
+    }
+
+    function renderBotoes() {
+        const dados = carregarDados();
+        const grade = document.getElementById('gradeBotoes');
+        grade.innerHTML = "";
+        for (let bloco in dados) {
+            const btn = document.createElement('button');
+            btn.className = "btn-palco";
+            btn.innerText = bloco;
+            btn.onclick = () => verMusicas(bloco);
+            grade.appendChild(btn);
+        }
+    }
+
+    function verMusicas(bloco) {
+        const dados = carregarDados();
+        document.getElementById('gradeBotoes').style.display = "none";
+        document.getElementById('instrucao').style.display = "none";
+        document.getElementById('viewSetlist').style.display = "block";
+        document.getElementById('nomeDoBlocoAtivo').innerText = bloco;
+        
+        const corpo = document.getElementById('corpoLista');
+        corpo.innerHTML = "";
+        
+        dados[bloco].forEach((musica, i) => {
+            const item = document.createElement('div');
+            item.className = "musica-linha";
+            item.innerHTML = `<span class="numero">${String(i+1).padStart(2, '0')}</span> <span>${musica}</span>`;
+            corpo.appendChild(item);
+        });
+        window.scrollTo(0,0);
+    }
+
+    function fecharLista() {
+        document.getElementById('gradeBotoes').style.display = "grid";
+        document.getElementById('instrucao').style.display = "block";
+        document.getElementById('viewSetlist').style.display = "none";
+    }
+
+    // Atualiza os botões ao ganhar foco (caso você mude no criador e volte pro palco)
+    window.onfocus = renderBotoes;
+    renderBotoes();
+</script>
+</body>
+</html>
